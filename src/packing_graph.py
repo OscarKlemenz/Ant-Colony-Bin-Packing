@@ -88,8 +88,21 @@ class PackingGraph():
             new_pheromone (int): Pheremone on the new edge
         """
         if from_id in self.graph and to_id in self.graph[from_id]['edges']:
-            self.graph[from_id]['edges'][to_id] = new_pheromone
-      
+            self.graph[from_id]['edges'][to_id] += new_pheromone # NEED TO CHECK IF ITS +=
+
+    def evaporatePheromones(self, evaporation_rate):
+        """ Evaporates pheromones on all edges in the graph.
+
+        Args:
+            evaporation_rate (float): The rate at which pheromones evaporate (0 < evaporation_rate < 1)
+        """
+        for from_node in self.graph:
+            for to_node in self.graph[from_node]['edges']:
+                current_pheromone = self.graph[from_node]['edges'][to_node]
+                # Apply evaporation UNSURE OF THIS FORMULA
+                new_pheromone = (1 - evaporation_rate) * current_pheromone
+                # Update the edge with the new pheromone value
+                self.graph[from_node]['edges'][to_node] = new_pheromone 
 
     def getEdges(self, node_id):
         """ Gets all the edges connected to the current node

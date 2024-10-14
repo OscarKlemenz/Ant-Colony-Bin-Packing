@@ -7,14 +7,15 @@ from packing_graph import PackingGraph
 import random
 
 class Ant():
-    def __init__(self, graph, random_seed):
+    def __init__(self, graph):
         """Initialisation
 
         Args:
             graph (PackingGraph): The graph the ant is going to traverse
         """
         self.graph = graph
-        random.seed(random_seed) # NOT SURE ABOUT THIS??
+        self.fitness = -1
+        self.path = []
 
     def traverseGraph(self):
         """ Ant travels through the graph from Start to End, uses cummulative probability to select its next node
@@ -23,11 +24,12 @@ class Ant():
         path = []
         # Starts at the Start node
         current_item = 'Start'
+        bin_weights = {}
+
         # Loop until current node equals end
         while current_item != 'End':
-            
             path.append(current_item)
-
+            # Gets all the possible next routes
             next_items = self.graph.getEdges(current_item)
             # Checks if preceding the end node NEED TO CHECK THIS AT SOME POINT
             if len(next_items) > 1 :
@@ -40,13 +42,58 @@ class Ant():
                     if random_number <= cumulative_pheromone:
                         current_item = item
                         break
+
+                bin_num, weight = current_item
+                # Update the bin weights as the ant travels
+                if bin_num in bin_weights:
+                    bin_weights[bin_num] += weight
+                else:
+                    bin_weights[bin_num] = weight
             else:
                 current_item = 'End'
         
-        print(path)
+        # Calculate the fitness now the path has been complete
+        fitness = self.calculateFitness(bin_weights)
 
-graph = PackingGraph(3, [1, 2, 3])
+        self.path = path
+        self.fitness = fitness
+        print("Final path:", path)
+        print("Fitness:", fitness)
+    
+    def calculateFitness(self, bin_weights):
+        """ Calculates the difference between the most and least full bin
+
+        Args:
+            bin_weights (dict): Dictionary of all the bins and their current weights
+        Returns:
+            int : The fitness of the path
+        """
+
+        heaviest_bin = max(bin_weights.values())
+        lightest_bin = min(bin_weights.values())
+        return (heaviest_bin - lightest_bin)
+
+    def updatePathPheromones(self):
+        
+        for i in range(0, len(self.path)-1):
+            self.graph.updatePheromone(self.path[i], self.path[i+1], 100 / self.fitness)
+
+# Create items and bins
+bins = 3
+items = []
+for i in range(1,10):
+    items.append(i)
+
+# Generate a graph
+graph = PackingGraph(bins, items)
 graph.initialiseGraph(6)
 graph.displayGraph()
-ant = Ant(graph, 6)
+
+# Run ant trials
+ant = Ant(graph)
 ant.traverseGraph()
+ant.updatePathPheromones()
+
+# NEXT DO FOR MULTIPLE ANTS BEFORE DOING EVAPOURATION ETC
+
+graph.displayGraph()
