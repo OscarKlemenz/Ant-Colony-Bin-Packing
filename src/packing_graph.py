@@ -25,7 +25,7 @@ class PackingGraph():
 
         # Create a start and end node
         self.graph['Start'] = {'edges': {}}
-        self.graph['End'] = {}
+        self.graph['End'] = {'edges': {}}
 
         # Create a node for each item in each possible bin
         for item in self.items:
@@ -53,7 +53,6 @@ class PackingGraph():
         for bin in range(1, self.num_bins + 1):
             self.addEdge((bin, last_item), 'End', 1) # Probabiltiy of going to End is 1, as it is the only possible node
 
-        self.displayGraph()
     
     def addNode(self, bin_num, item):
         """Adds a new item, using the tuple (bin_num, item) as its ID
@@ -98,11 +97,7 @@ class PackingGraph():
         """
         for from_node in self.graph:
             for to_node in self.graph[from_node]['edges']:
-                current_pheromone = self.graph[from_node]['edges'][to_node]
-                # Apply evaporation UNSURE OF THIS FORMULA
-                new_pheromone = (1 - evaporation_rate) * current_pheromone
-                # Update the edge with the new pheromone value
-                self.graph[from_node]['edges'][to_node] = new_pheromone 
+                self.graph[from_node]['edges'][to_node] *= evaporation_rate
 
     def getEdges(self, node_id):
         """ Gets all the edges connected to the current node
@@ -137,8 +132,3 @@ class PackingGraph():
             else:
                 print(f"Node (Bin {node[0]}, Item {node[1]}): Edges={data['edges']}")
 
-# Example usage
-graph = PackingGraph(3, [1, 2, 3])
-graph.initialiseGraph(5)
-graph.displayGraph()
-print(graph.getPheromone('Start', (1,1)))

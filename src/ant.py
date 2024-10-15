@@ -57,8 +57,6 @@ class Ant():
 
         self.path = path
         self.fitness = fitness
-        print("Final path:", path)
-        print("Fitness:", fitness)
     
     def calculateFitness(self, bin_weights):
         """ Calculates the difference between the most and least full bin
@@ -74,26 +72,23 @@ class Ant():
         return (heaviest_bin - lightest_bin)
 
     def updatePathPheromones(self):
-        
+        """ Updates the pheromone for the whole of the path the ant took
+        """
         for i in range(0, len(self.path)-1):
             self.graph.updatePheromone(self.path[i], self.path[i+1], 100 / self.fitness)
+    
+    def getFitness(self):
+        """ Returns the fitness of the ant
 
-# Create items and bins
-bins = 3
-items = []
-for i in range(1,10):
-    items.append(i)
+        Returns:
+            int: Fitness value
+        """
+        return self.fitness
+    
+    def getPath(self):
+        """ Returns the path of the ant
 
-# Generate a graph
-graph = PackingGraph(bins, items)
-graph.initialiseGraph(6)
-graph.displayGraph()
-
-# Run ant trials
-ant = Ant(graph)
-ant.traverseGraph()
-ant.updatePathPheromones()
-
-# NEXT DO FOR MULTIPLE ANTS BEFORE DOING EVAPOURATION ETC
-
-graph.displayGraph()
+        Returns:
+            tuple[]: Path of the ant
+        """
+        return self.path
