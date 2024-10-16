@@ -19,7 +19,7 @@ class Ant():
         self.bin_weights = {}
 
     def traverseGraph(self):
-        """ Ant travels through the graph from Start to End, uses cummulative probability to select its next node
+        """ Ant travels through the graph from Start to End, selecting the next node using the random library
         """
         path = []
         # Starts at the Start node
@@ -28,29 +28,21 @@ class Ant():
 
         # Loop until current node equals end
         while current_item != 'End':
+            
             path.append(current_item)
+            
             # Gets all the possible next routes
             next_items = self.graph.getEdges(current_item)
-            # Checks if preceding the end node NEED TO CHECK THIS AT SOME POINT
-            if len(next_items) > 1 :
-                # Randomly selects an item, based upon pheromones
-                total_pheromone = sum(next_items.values())
-                random_number = random.uniform(0, total_pheromone)
-                cumulative_pheromone = 0
-                for item, pheromone in next_items.items():
-                    cumulative_pheromone += pheromone
-                    if random_number <= cumulative_pheromone:
-                        current_item = item
-                        break
-
-                bin_num, weight = current_item
-                # Update the bin weights as the ant travels
-                if bin_num in bin_weights:
-                    bin_weights[bin_num] += weight
-                else:
-                    bin_weights[bin_num] = weight
+            
+            if len(next_items) == 1:
+                current_item = list(next_items.keys())[0]
             else:
-                current_item = 'End'
+                # Choose based on weighted pheromones
+                items, pheromones = zip(*next_items.items())
+                current_item = random.choices(items, weights=pheromones, k=1)[0]
+                # Update bin weights based on the current item
+                bin_num, weight = current_item
+                bin_weights[bin_num] = bin_weights.get(bin_num, 0) + weight
         
         # Calculate the fitness now the path has been complete
         fitness = self.calculateFitness(bin_weights)
