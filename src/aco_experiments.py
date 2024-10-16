@@ -14,22 +14,24 @@ def run_experiment(p, e, bins, items, random_seed):
     graph = PackingGraph(bins, items)
     graph.initialiseGraph(random_seed)
 
-    while no_of_evaluations < 2:
+    while no_of_evaluations < 10000:
         
         current_ants = []
         # 0-p ants traverse the graph
-        for _ in range(0, 2):
+        for _ in range(0, p):
             # Traverse the graph
             ant = Ant(graph)
             ant.traverseGraph()
             # Store the Ant
             current_ants.append(ant)
-            print(ant.getPath())
-            print(ant.getFitness())
+            # print(ant.getPath())
+            # print(ant.getFitness())
             # Get the fitness and see if its better than current best 
             if ant.getFitness() < best_fitness:
                 best_fitness = ant.getFitness()
                 best_path = ant.getPath()
+                best_ant = ant
+                # print(best_fitness)
             
             no_of_evaluations += 1
 
@@ -38,6 +40,20 @@ def run_experiment(p, e, bins, items, random_seed):
             ant.updatePathPheromones()
         # Evaporate the pheromone
         graph.evaporatePheromones(e)
+        # NEED TO MODIFY THE EVAPOURATION RATE!
+    
+    print(best_ant.getBinWeights())
+
+    sorted_keys = sorted(best_ant.getBinWeights().keys())
+    sorted_values = [best_ant.getBinWeights()[key] for key in sorted_keys]
+
+    # Calculate differences between consecutive values
+    differences = [sorted_values[i+1] - sorted_values[i] for i in range(len(sorted_values) - 1)]
+
+    # Calculate the average of the differences
+    average_difference = sum(differences) / len(differences)
+
+    print("Average Difference:", abs(average_difference))
 
     # graph.displayGraph()
     # print(best_fitness)
@@ -51,4 +67,5 @@ if __name__ == "__main__":
     for i in range(1,500):
         items.append(i)
 
-    run_experiment(100, 0.9, bins, items, 11)
+    run_experiment(100, 0.9, bins, items, 14)
+    # Could do range / sum as well

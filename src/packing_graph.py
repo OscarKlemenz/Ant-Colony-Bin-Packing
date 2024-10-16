@@ -97,7 +97,7 @@ class PackingGraph():
         """
         for from_node in self.graph:
             for to_node in self.graph[from_node]['edges']:
-                self.graph[from_node]['edges'][to_node] *= evaporation_rate
+                self.graph[from_node]['edges'][to_node] *= (1-evaporation_rate) # More effective evapouration method
 
     def getEdges(self, node_id):
         """ Gets all the edges connected to the current node

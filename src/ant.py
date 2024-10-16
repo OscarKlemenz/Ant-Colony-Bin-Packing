@@ -16,10 +16,10 @@ class Ant():
         self.graph = graph
         self.fitness = -1
         self.path = []
+        self.bin_weights = {}
 
     def traverseGraph(self):
         """ Ant travels through the graph from Start to End, uses cummulative probability to select its next node
-
         """
         path = []
         # Starts at the Start node
@@ -57,6 +57,7 @@ class Ant():
 
         self.path = path
         self.fitness = fitness
+        self.bin_weights = bin_weights
     
     def calculateFitness(self, bin_weights):
         """ Calculates the difference between the most and least full bin
@@ -66,7 +67,6 @@ class Ant():
         Returns:
             int : The fitness of the path
         """
-
         heaviest_bin = max(bin_weights.values())
         lightest_bin = min(bin_weights.values())
         return (heaviest_bin - lightest_bin)
@@ -92,3 +92,11 @@ class Ant():
             tuple[]: Path of the ant
         """
         return self.path
+    
+    def getBinWeights(self):
+        """ Returns the bin weights of the path the ant took
+
+        Returns:
+            dict: Bin weights of the path
+        """
+        return self.bin_weights
