@@ -5,6 +5,7 @@ An ant need to - Store its current path
 """
 from packing_graph import PackingGraph
 import random
+import config as conf
 
 class Ant():
     def __init__(self, graph):
@@ -67,7 +68,7 @@ class Ant():
         """ Updates the pheromone for the whole of the path the ant took
         """
         for i in range(0, len(self.path)-1):
-            self.graph.updatePheromone(self.path[i], self.path[i+1], 100 / self.fitness)
+            self.graph.updatePheromone(self.path[i], self.path[i+1], conf.FITNESS_NUMERATOR / self.fitness)
     
     def getFitness(self):
         """ Returns the fitness of the ant

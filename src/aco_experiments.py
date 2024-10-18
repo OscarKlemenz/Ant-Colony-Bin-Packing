@@ -3,8 +3,9 @@
 from packing_graph import PackingGraph
 from ant import Ant
 import config as conf
+import random
 
-def runExperiment(p, e, bins, items, random_seed):
+def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     """ Runs a set amount of evaluations of the ACO algorithm on the 1DBPP
 
     Args:
@@ -14,28 +15,28 @@ def runExperiment(p, e, bins, items, random_seed):
         items (int[]): The items to place in the bins
         random_seed (int): The seed value for when random is used in the experiment
     """
-    
-    # STOP after 10,000 fitness evaluations
+    random.seed(random_seed)
     no_of_evaluations = 0
     best_fitness = float('inf')
 
     # Generate a graph
-    graph = PackingGraph(bins, items)
-    graph.initialiseGraph(random_seed)
+    graph = PackingGraph(bins, items, random_seed)
+    graph.initialiseGraph()
 
     while no_of_evaluations < conf.NUM_EVALUATIONS:
         
         current_ants = []
         # 0-p ants traverse the graph
-        for _ in range(0, p):
+        for _ in range(0, num_ants):
             # Traverse the graph
             ant = Ant(graph)
             ant.traverseGraph()
             # Store the Ant
             current_ants.append(ant)
+            current_fitness = ant.getFitness()
             # Get the fitness and see if its better than current best 
-            if ant.getFitness() < best_fitness:
-                best_fitness = ant.getFitness()
+            if current_fitness < best_fitness:
+                best_fitness = current_fitness
                 best_ant = ant
             
             no_of_evaluations += 1
@@ -44,8 +45,7 @@ def runExperiment(p, e, bins, items, random_seed):
         for ant in current_ants:
             ant.updatePathPheromones()
         # Evaporate the pheromone
-        graph.evaporatePheromones(e)
-        # NEED TO MODIFY THE EVAPOURATION RATE!
+        graph.evaporatePheromones(evaporation_rate)
     
     # AVERAGE CALCULATIONS
     sorted_keys = sorted(best_ant.getBinWeights().keys())
@@ -70,12 +70,10 @@ def getValuesForProblem(bin_problem):
 
     items = []
     if bin_problem == "BPP1":
-        for i in range(1,500):
-            items.append(i)
+        items = list(range(1, 501))
         return 10, items
     elif bin_problem == "BPP2":
-        for i in range(1,500):
-            items.append(i**2/2)
+        items = [i ** 2 / 2 for i in range(1, 501)]
         return 50, items
     else:
         return 0, items
@@ -84,7 +82,6 @@ if __name__ == "__main__":
     
     # Gets the bin num and items for the set problem
     bins, items = getValuesForProblem(conf.BPP1)
-
     # Runs a set amount of trials
     for i in range(0, conf.NUM_TRIALS):
         # i is used as the random seed for each trial

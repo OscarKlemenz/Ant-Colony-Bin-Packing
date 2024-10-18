@@ -4,7 +4,7 @@ to each bin/item combination. Each directed edge also contains a pheremone value
 import random
 
 class PackingGraph():
-    def __init__(self, num_bins, items):
+    def __init__(self, num_bins, items, random_seed):
         """ Initialisation
 
         Args:
@@ -15,13 +15,15 @@ class PackingGraph():
         self.items = items
         self.num_items = len(items)
         self.graph = {}
+        self.random_seed = random_seed
 
-    def initialiseGraph(self, random_seed):
+    def initialiseGraph(self):
         """ Initalises the graph ready for the ACO algorithm
 
         Args:
             random_seed int: The seed for the random number generator
         """
+        random.seed(self.random_seed)
 
         # Create a start and end node
         self.graph['Start'] = {'edges': {}}
@@ -33,7 +35,6 @@ class PackingGraph():
                 self.addNode(bin, item)
 
         # Connect Start to all nodes to the first item/bin combinations
-        random.seed(random_seed)
         first_item = self.items[0]
         for bin in range(1, self.num_bins + 1):
             self.addEdge('Start', (bin, first_item), random.random())

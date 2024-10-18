@@ -4,6 +4,7 @@
 # Experiment Variables
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
+FITNESS_NUMERATOR = 100
 
 # Problem names
 BPP1 = 'BPP1'
