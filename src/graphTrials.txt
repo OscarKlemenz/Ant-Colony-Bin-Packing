@@ -1,2 +1,0 @@
-- Mapping best and worst doesnt give the best graph
-- Mapping best fitness after each p shows some of the convergence

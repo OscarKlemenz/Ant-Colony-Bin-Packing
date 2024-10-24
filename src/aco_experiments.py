@@ -21,37 +21,36 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     best_fitness = float('inf')
 
     # Generate a graph
-    graph = PackingGraph(bins, items, 10) # Seeding CHECK THIS
+    graph = PackingGraph(bins, items, random_seed) 
     graph.initialiseGraph()
+
+    current_ants = [Ant(graph) for _ in range(num_ants)]
 
     # Holds best and worst fitness for each p paths
     best_fitnesses = []
 
     while no_of_evaluations < conf.NUM_EVALUATIONS:
-        
-        current_ants = []
-        # 0-p ants traverse the graph
-        for _ in range(0, num_ants):
-            # Traverse the graph
-            ant = Ant(graph)
+        for ant in current_ants:
             ant.traverseGraph()
-            # Store the Ant
-            current_ants.append(ant)
             current_fitness = ant.getFitness()
-            # Get the fitness and see if its better than current best 
+            
+            # Check and store the best fitness
             if current_fitness < best_fitness:
                 best_fitness = current_fitness
                 best_ant = ant
             
             no_of_evaluations += 1
 
-        # Store the best and worst for those paths
+        # Store the best fitness for the paths evaluated
         best_fitnesses.append(best_fitness)
-        # Update the pheromone paths by looping over list of ants and running the method
+
+        # Batch pheromone updates
         for ant in current_ants:
             ant.updatePathPheromones()
-        # Evaporate the pheromone
+        
+        # Evaporate the pheromones after all updates
         graph.evaporatePheromones(evaporation_rate)
+
     
     # AVERAGE CALCULATIONS
     sorted_keys = sorted(best_ant.getBinWeights().keys())

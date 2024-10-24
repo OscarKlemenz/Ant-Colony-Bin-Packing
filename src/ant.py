@@ -67,8 +67,9 @@ class Ant():
     def updatePathPheromones(self):
         """ Updates the pheromone for the whole of the path the ant took
         """
+        pheromone_value = conf.FITNESS_NUMERATOR / self.fitness if self.fitness > 0 else 0
         for i in range(0, len(self.path)-1):
-            self.graph.updatePheromone(self.path[i], self.path[i+1], conf.FITNESS_NUMERATOR / self.fitness)
+            self.graph.updatePheromone(self.path[i], self.path[i+1], pheromone_value)
     
     def getFitness(self):
         """ Returns the fitness of the ant

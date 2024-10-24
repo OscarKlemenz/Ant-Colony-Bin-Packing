@@ -52,7 +52,7 @@ class PackingGraph():
         # Connect all last bin/item combinations to End
         last_item = self.items[-1]
         for bin in range(1, self.num_bins + 1):
-            self.addEdge((bin, last_item), 'End', 1) # Probabiltiy of going to End is 1, as it is the only possible node
+            self.addEdge((bin, last_item), 'End', 1) # Probabiltiy is 1, as it is the only possible node
 
     
     def addNode(self, bin_num, item):
@@ -88,7 +88,7 @@ class PackingGraph():
             new_pheromone (int): Pheremone on the new edge
         """
         if from_id in self.graph and to_id in self.graph[from_id]['edges']:
-            self.graph[from_id]['edges'][to_id] = new_pheromone # NEED TO CHECK IF ITS +=
+            self.graph[from_id]['edges'][to_id] += new_pheromone
 
     def evaporatePheromones(self, evaporation_rate):
         """ Evaporates pheromones on all edges in the graph.
@@ -98,7 +98,7 @@ class PackingGraph():
         """
         for from_node in self.graph:
             for to_node in self.graph[from_node]['edges']:
-                self.graph[from_node]['edges'][to_node] *= evaporation_rate # More effective evapouration method 1-e
+                self.graph[from_node]['edges'][to_node] *= evaporation_rate
 
     def getEdges(self, node_id):
         """ Gets all the edges connected to the current node
