@@ -21,7 +21,7 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     best_fitness = float('inf')
 
     # Generate a graph
-    graph = PackingGraph(bins, items, random_seed)
+    graph = PackingGraph(bins, items, 10) # Seeding CHECK THIS
     graph.initialiseGraph()
 
     # Holds best and worst fitness for each p paths
