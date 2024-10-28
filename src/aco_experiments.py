@@ -19,7 +19,7 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     """
     # Sets the seed
     no_of_evaluations = 0
-    best_fitness = float('inf')
+    best_fitness_overall = float('inf')
 
     random.seed(99)
     # Generate a graph
@@ -32,21 +32,26 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
 
     # Holds best and worst fitness for each p paths
     fitness_prog = []
+    best_fitness_per_p = []
 
     while no_of_evaluations < conf.NUM_EVALUATIONS:
+        best_fitness_for_p = float('inf')
         for ant in current_ants:
             ant.traverseGraph()
             current_fitness = ant.getFitness()
             
-            # Check and store the best fitness
-            if current_fitness < best_fitness:
-                best_fitness = current_fitness
+            # Check and store the best fitness overall
+            if current_fitness < best_fitness_overall:
+                best_fitness_overall = current_fitness
                 best_ant = ant
+            elif current_fitness < best_fitness_for_p:
+                best_fitness_for_p = current_fitness
             
             no_of_evaluations += 1
 
         # Store the best fitness for the paths evaluated
-        fitness_prog.append(best_fitness)
+        fitness_prog.append(best_fitness_overall)
+        best_fitness_per_p.append(best_fitness_for_p)
 
         # Batch pheromone updates
         for ant in current_ants:
@@ -71,15 +76,15 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     # Calculate load balance ratio
     load_balance_ratio = max_weight / min_weight
     
-    # Plot a bar chart of the bin weight distribution
+    # Plot a bar chart of the bin weight distribution for a trial
     if conf.PLOT_WEIGHT_DIST: plotter.plotWeightDistribution(bin_weights)
 
     # Outputs
-    print("Best fitness: ", best_fitness)
+    print("Best fitness: ", best_fitness_overall)
     print("Mean Absolute Deviation: ", abs(average_difference))
     print("Load balance ratio: ", f"{load_balance_ratio:.3g}")
 
-    return fitness_prog, best_fitness
+    return fitness_prog, best_fitness_overall, best_fitness_per_p
 
 def getValuesForProblem(bin_problem):
     """ Returns the correct bin and item values for a set problem
@@ -111,19 +116,23 @@ if __name__ == "__main__":
         print("Experiment: ", values)
         experiment_fitnesses = []
         fitness_progressions = []
+        fitness_progressions_per_p = []
         # Runs a set amount of trials
         for i in range(0, conf.NUM_TRIALS):
             print("Trial ", i+1)
             # i is used as the random seed for each trial
-            fitness_prog, best_fitness = runExperiment(values[0], values[1], bins, items, i)
+            fitness_prog, best_fitness, best_fitness_per_p = runExperiment(values[0], values[1], bins, items, i)
 
             fitness_progressions.append(fitness_prog)
             experiment_fitnesses.append(best_fitness)
-            # Could do range / sum as well
+            fitness_progressions_per_p.append(best_fitness_per_p)
         
         all_fitnesses.append(experiment_fitnesses)
 
-        if conf.PLOT_FITNESS_PROGRESSION: plotter.plotBestFitnessProgression(fitness_progressions)
+        # Plots the improvements to the best fitness
+        if conf.PLOT_BEST_FITNESS_PROGRESSION: plotter.plotBestFitnessProgressionAllTrials(fitness_progressions)
+        # Plots the recorded best fitness for p ant paths
+        if conf.PLOT_FITNESS_PROGRESSION_PER_P: plotter.plotBestFitnessProgressionAllTrials(fitness_progressions_per_p)
     
     if conf.PLOT_EXPERIMENT_TRIALS: plotter.plotExperimentTrials(all_fitnesses)
     

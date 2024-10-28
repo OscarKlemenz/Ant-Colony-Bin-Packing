@@ -2,7 +2,7 @@
 """
 import matplotlib.pyplot as plt
 
-def plotBestFitnessProgression(best_fitnesses):
+def plotBestFitnessProgressionAllTrials(best_fitnesses):
     """ Line graph of how the best fitness evolves over each of the trials for an experiment
 
     Args:
@@ -20,6 +20,32 @@ def plotBestFitnessProgression(best_fitnesses):
 
     # Add title and labels
     plt.title('Best Fitness')
+    plt.xlabel('Test Number')
+    plt.ylabel('Fitness')
+
+    # Show legend
+    plt.legend()
+
+    # Display the plot
+    plt.show()
+
+def plotBestFitnessProgressionOneTrial(best_fitnesses):
+    """ Line graph of how the best fitness evolves over a trial
+
+    Args:
+        best_fitnesses (list of int): List of the best fitnesses for a single trial
+    """
+    # Use the indices of the array as the test numbers
+    test_numbers = range(len(best_fitnesses))  # Length of the best_fitnesses array
+
+    # Create the plot
+    plt.figure(figsize=(10, 6))
+
+    # Plot the best fitness values for the single trial
+    plt.plot(test_numbers, best_fitnesses, linestyle='-', label='Trial 1')
+
+    # Add title and labels
+    plt.title('Best Fitness Progression')
     plt.xlabel('Test Number')
     plt.ylabel('Fitness')
 
