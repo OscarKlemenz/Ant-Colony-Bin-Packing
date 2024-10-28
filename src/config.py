@@ -1,6 +1,5 @@
 """ Stores any important variables for ACO experimentation
 """
-
 # Experiment Variables
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
@@ -10,3 +9,8 @@ P_AND_E_VALUES = [(100, 0.9), (100, 0.6), (10, 0.9), (10, 0.6)]
 # Problem names
 BPP1 = 'BPP1'
 BPP2 = 'BPP2'
+
+# Graph plotting
+PLOT_FITNESS_PROGRESSION = False
+PLOT_EXPERIMENT_TRIALS = False
+PLOT_WEIGHT_DIST = False

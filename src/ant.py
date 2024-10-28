@@ -3,7 +3,6 @@ An ant needs to - Traverse the graph, From the node it is currently at randomly 
 An ant need to - Store its current path
 
 """
-from packing_graph import PackingGraph
 import random
 import config as conf
 
