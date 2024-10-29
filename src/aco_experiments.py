@@ -6,6 +6,7 @@ from ant import Ant
 import config as conf
 import plotter
 import random
+import cProfile
 
 def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     """ Runs a set amount of evaluations of the ACO algorithm on the 1DBPP
@@ -37,9 +38,8 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     while no_of_evaluations < conf.NUM_EVALUATIONS:
         best_fitness_for_p = float('inf')
         for ant in current_ants:
-            ant.traverseGraph()
-            current_fitness = ant.getFitness()
-            
+            # Ant traverses the graph
+            current_fitness = ant.traverseGraph()
             # Check and store the best fitness overall
             if current_fitness < best_fitness_overall:
                 best_fitness_overall = current_fitness
@@ -131,10 +131,8 @@ if __name__ == "__main__":
 
         # Plots the improvements to the best fitness
         if conf.PLOT_BEST_FITNESS_PROGRESSION: plotter.plotBestFitnessProgressionAllTrials(fitness_progressions)
-        # Plots the recorded best fitness for p ant paths
+        # Plots the recorded best fitness for each p ant paths
         if conf.PLOT_FITNESS_PROGRESSION_PER_P: plotter.plotBestFitnessProgressionAllTrials(fitness_progressions_per_p)
     
     if conf.PLOT_EXPERIMENT_TRIALS: plotter.plotExperimentTrials(all_fitnesses)
-    
-
-        
+  

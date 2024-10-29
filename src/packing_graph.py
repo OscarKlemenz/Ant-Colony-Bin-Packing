@@ -83,8 +83,7 @@ class PackingGraph():
             to_id (tuple): Node that the ant arrived at (bin, item)
             new_pheromone (int): Pheremone on the new edge
         """
-        if from_id in self.graph and to_id in self.graph[from_id]['edges']:
-            self.graph[from_id]['edges'][to_id] += new_pheromone
+        self.graph[from_id]['edges'][to_id] += new_pheromone
 
     def evaporatePheromones(self, evaporation_rate):
         """ Evaporates pheromones on all edges in the graph.

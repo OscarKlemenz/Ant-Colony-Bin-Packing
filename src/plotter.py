@@ -1,4 +1,4 @@
-""" Used to visualise the bin packing data 
+""" Data visualisation functions
 """
 import matplotlib.pyplot as plt
 

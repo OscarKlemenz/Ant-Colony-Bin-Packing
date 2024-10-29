@@ -35,7 +35,7 @@ class Ant():
             next_items = self.graph.getEdges(current_item)
             
             if len(next_items) == 1:
-                current_item = list(next_items.keys())[0]
+                current_item = next(iter(next_items.keys()))
             else:
                 # Choose based on weighted pheromones
                 items, pheromones = zip(*next_items.items())
@@ -43,13 +43,15 @@ class Ant():
                 # Update bin weights based on the current item
                 bin_num, weight = current_item
                 bin_weights[bin_num] = bin_weights.get(bin_num, 0) + weight
-        
+
         # Calculate the fitness now the path has been complete
         fitness = self.calculateFitness(bin_weights)
 
         self.path = path
         self.fitness = fitness
         self.bin_weights = bin_weights
+
+        return fitness
     
     def calculateFitness(self, bin_weights):
         """ Calculates the difference between the most and least full bin
@@ -66,7 +68,7 @@ class Ant():
     def updatePathPheromones(self):
         """ Updates the pheromone for the whole of the path the ant took
         """
-        pheromone_value = conf.FITNESS_NUMERATOR / self.fitness if self.fitness > 0 else 0
+        pheromone_value = conf.FITNESS_NUMERATOR / self.fitness
         for i in range(0, len(self.path)-1):
             self.graph.updatePheromone(self.path[i], self.path[i+1], pheromone_value)
     

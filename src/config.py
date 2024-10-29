@@ -4,7 +4,7 @@
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
 FITNESS_NUMERATOR = 100
-P_AND_E_VALUES = [(10, 0.6), (100, 0.6), (10, 0.9), (10, 0.6)]
+P_AND_E_VALUES = [(100, 0.9) ]#,  (100, 0.6), (10, 0.9), (10, 0.6)]
 
 # Problem names
 BPP1 = 'BPP1'
