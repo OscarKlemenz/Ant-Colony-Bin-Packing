@@ -8,6 +8,7 @@ How to run:
 """
 import random
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import numpy as np
 """ Global variables for ACO experimentation
 """
@@ -15,7 +16,7 @@ import numpy as np
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
 FITNESS_NUMERATOR = 100
-P_AND_E_VALUES = [(100, 0.9) , (100, 0.6), (10, 0.9), (10, 0.6)]
+P_AND_E_VALUES = [(10,0.6)]#[(100, 0.9) , (100, 0.6), (10, 0.9), (10, 0.6)]
 
 # Problem names
 BPP1 = 'BPP1'
@@ -195,6 +196,7 @@ class Ant():
                 # Choose based on weighted pheromones
                 items, pheromones = zip(*next_items.items())
                 current_item = random.choices(items, weights=pheromones, k=1)[0]
+
                 # Update bin weights based on the current item
                 bin_num, weight = current_item
                 bin_weights[bin_num] = bin_weights.get(bin_num, 0) + weight
@@ -253,13 +255,13 @@ class Ant():
 
 """ Data visualisation functions
 """
-def plotBestFitnessProgressionAllTrials(best_fitnesses):
+def plotBestFitnessProgressionAllTrials(best_fitnesses, title):
     """ Line graph of how the best fitness evolves over each of the trials for an experiment.
 
     Args:
         best_fitnesses (int[][]): List of the best fitnesses for each trial.
     """
-    # Number of tests that have occured
+    # Number of tests that have occurred
     test_numbers = range(len(best_fitnesses[0]))
 
     # Create the plot
@@ -270,9 +272,12 @@ def plotBestFitnessProgressionAllTrials(best_fitnesses):
         plt.plot(test_numbers, trial_best_values, linestyle='-', label=f'Trial {idx + 1}')
 
     # Add title and labels
-    plt.title('Best Fitness Progression Over Trials')
+    plt.title(title)
     plt.xlabel('Test Number')
     plt.ylabel('Fitness')
+
+    # Format y-axis ticks with commas for thousands
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x):,}'))
 
     # Show legend
     plt.legend()
@@ -493,8 +498,8 @@ if __name__ == "__main__":
         all_fitnesses.append(experiment_fitnesses)
 
         # Plots the improvements to the best fitness
-        if PLOT_BEST_FITNESS_PROGRESSION: plotBestFitnessProgressionAllTrials(fitness_progressions)
+        if PLOT_BEST_FITNESS_PROGRESSION: plotBestFitnessProgressionAllTrials(fitness_progressions, "Best Fitness Progression")
         # Plots the recorded best fitness for each p ant paths
-        if PLOT_FITNESS_PROGRESSION_PER_P: plotBestFitnessProgressionAllTrials(fitness_progressions_per_p)
+        if PLOT_FITNESS_PROGRESSION_PER_P: plotBestFitnessProgressionAllTrials(fitness_progressions_per_p, "Best Fitness For p Ant Paths")
     
     if PLOT_EXPERIMENT_TRIALS: plotExperimentTrials(all_fitnesses)
