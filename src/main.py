@@ -1,56 +1,98 @@
-""" ECM3401 Coursework README
+""" ECM3401 Coursework
 
-This script contains all of the functionality for the ACO BPP coursework
+This script implements an Ant Colony Optimization (ACO) algorithm for solving the Bin Packing Problem (BPP) 
+as part of the ECM3401 coursework. 
 
-How to run:
+The script includes configuration options for experimentation with various parameters, 
+and generates visualisations of the algorithm across trials.
 
+-- Prerequisites -- 
+
+This script requires Python and the following libraries for plotting and numerical computations:
+- matplotlib
+- numpy
+
+Install the dependencies using: pip install matplotlib numpy
+
+-- Running the Script --
+
+To execute the script, run the following command in the terminal: python3 main.py
+
+-- Configuration for Experimentation --
+
+Several global variables are provided to control the script behavior and enable experimentation:
+
+- PROBLEM_TO_SOLVE - Defines the Bin Packing Problem (BPP) instance to be solved.
+
+Experiment Parameters - Key variables that affect the behavior of the ACO algorithm:
+
+- NUM_EVALUATIONS: Total number of evaluations to run for the algorithm (default: 10,000)
+- NUM_TRIALS: Number of trials to perform for each experiment configuration (default: 5)
+- FITNESS_NUMERATOR: Constant used in calculating pheromone levels based on fitness
+- P_AND_E_VALUES: List of tuples (p, e) where p is the number of paths to generate before 
+                  updating pheromones, and e is the evaporation rate
+
+Graph Plotting - Flags to enable or disable various plots for visualising the results:
+
+- PLOT_BEST_FITNESS_PROGRESSION: Plot best fitness progression across trials
+- PLOT_FITNESS_PROGRESSION_PER_P: Plot best fitness progression per p value
+- PLOT_EXPERIMENT_TRIALS: Plot bar chart of best fitness for each trial
+- PLOT_WEIGHT_DIST: Plot bin weight distribution for a single trial
 
 """
-import random
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 import numpy as np
-""" Global variables for ACO experimentation
+import random
+from typing import List, Tuple
+""" 
+Global variables for ACO experimentation
 """
 # Experiment Variables
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
 FITNESS_NUMERATOR = 100
-P_AND_E_VALUES = [(10,0.6)]#[(100, 0.9) , (100, 0.6), (10, 0.9), (10, 0.6)]
+P_AND_E_VALUES = [(100, 0.9) , (100, 0.6), (10, 0.9), (10, 0.6)]
 
-# Problem names
+# Problems
 BPP1 = 'BPP1'
 BPP2 = 'BPP2'
 
-PROBLEM_TO_SOLVE = BPP2
+PROBLEM_TO_SOLVE = BPP1
 
 # Graph plotting
-PLOT_BEST_FITNESS_PROGRESSION = True
-PLOT_FITNESS_PROGRESSION_PER_P = True
-PLOT_EXPERIMENT_TRIALS = True
+PLOT_BEST_FITNESS_PROGRESSION = False
+PLOT_FITNESS_PROGRESSION_PER_P = False
+PLOT_EXPERIMENT_TRIALS = False
 PLOT_WEIGHT_DIST = False
 
-""" Class for the construction graph, used to represent all possible decisions ants can make, when traversing
+# For Further Experimentation
+LOCAL_HEURSTIC_EXPERIMENT = False
+ALPHA = 0.1
+VARIABLE_E_VALUES = [(10, 0.85), (10, 0.8), (10,0.75), (10, 0.7)]
+VARIABLE_P_VALUES = [(5, 0.9), (20, 0.9), (50, 0.9), (75, 0.9)]
+
+""" 
+Class for the construction graph, used to represent all possible decisions ants can make, when traversing
 to each bin/item combination. Each directed edge also contains a pheremone value.
 """
-class PackingGraph():
-    def __init__(self, num_bins, items):
+class Graph():
+    def __init__(self, num_bins: int, items: List[int]) -> None:
         """ Initialisation
 
         Args:
-            num_bins int: The number of bins in the problem
-            items int[]: The items to place in the bins
+            num_bins (int): The number of bins in the problem
+            items (int[]): The items to place in the bins
         """
         self.num_bins = num_bins
         self.items = items
         self.num_items = len(items)
         self.graph = {}
 
-    def initialiseGraph(self):
-        """ Initalises the graph ready for the ACO algorithm
+    def initialiseGraph(self) -> None:
+        """ Creates the graph ready for the ACO algorithm
 
         Args:
-            random_seed int: The seed for the random number generator
+            random_seed (int): The seed for the random number generator
         """
         # Create a start and end node
         self.graph['Start'] = {'edges': {}}
@@ -81,8 +123,8 @@ class PackingGraph():
         for bin in range(1, self.num_bins + 1):
             self.addEdge((bin, last_item), 'End', 1) # Probabiltiy is 1, as it is the only possible node
 
-    def addNode(self, bin_num, item):
-        """Adds a new item, using the tuple (bin_num, item) as its ID
+    def addNode(self, bin_num: int, item: int) -> None:
+        """ Adds a new item, using the tuple (bin_num, item) as its ID
 
         Args:
             bin_num (int): The number of the bin
@@ -92,7 +134,7 @@ class PackingGraph():
         if node_id not in self.graph:
             self.graph[node_id] = {'edges': {}}
 
-    def addEdge(self, from_id, to_id, pheromone):
+    def addEdge(self, from_id: Tuple[int, int], to_id: Tuple[int, int], pheromone: int) -> None:
         """ Adds a new path to the graph, with a pheromone weight
 
         Args:
@@ -105,7 +147,7 @@ class PackingGraph():
         else:
             print("One of the nodes is not in the graph")
 
-    def updatePheromone(self, from_id, to_id, new_pheromone):
+    def updatePheromone(self, from_id: Tuple[int, int], to_id: Tuple[int, int], new_pheromone: int) -> None:
         """ Updates the pheromone on the directed edge
 
         Args:
@@ -115,7 +157,7 @@ class PackingGraph():
         """
         self.graph[from_id]['edges'][to_id] += new_pheromone
 
-    def evaporatePheromones(self, evaporation_rate):
+    def evaporatePheromones(self, evaporation_rate: float) -> None:
         """ Evaporates pheromones on all edges in the graph.
 
         Args:
@@ -125,29 +167,18 @@ class PackingGraph():
             for to_node in self.graph[from_node]['edges']:
                 self.graph[from_node]['edges'][to_node] *= evaporation_rate
 
-    def getEdges(self, node_id):
+    def getEdges(self, node_id: Tuple[int, int]) -> dict:
         """ Gets all the edges connected to the current node
 
         Args:
             node_id (tuple): Node that the ant is currently at (bin, item)
         Returns:
-            dict : Nodes that are connected to a node, with their pheromone value
+            Nodes that are connected to a node, with their pheromone value
         """
         return self.graph[node_id]['edges']
 
-    def getPheromone(self, from_id, to_id):
-        """ Gets the pheremone for a specific edge between two nodes
-
-        Args:
-            from_id (tuple): Node the ant is currently at
-            to_id (tuple): Node the ant may travel to
-        Returns:
-            float : Pheromone value for an edge
-        """
-        return self.graph[from_id]['edges'][to_id]
-
     def displayGraph(self):
-        """ Outputs the packing graph
+        """ Outputs the graph
         """
         print("Graph:")
         for node, data in self.graph.items():
@@ -160,28 +191,33 @@ class PackingGraph():
 
 """
 Class declaration for an Ant, which will traverse across the generated graph based upon pheromones
-
 """
 class Ant():
-    def __init__(self, graph):
-        """Initialisation
+    def __init__(self, graph: Graph) -> None:
+        """ Initialisation
 
         Args:
-            graph (PackingGraph): The graph the ant is going to traverse
+            graph (Graph): The graph the ant is going to traverse
         """
         self.graph = graph
         self.fitness = -1
         self.path = []
         self.bin_weights = {}
 
-    def traverseGraph(self):
+    def traverseGraph(self) -> int:
         """ Ant travels through the graph from Start to End, selecting the next node using the random library
+
+        Returns:
+            int: The fitness of the traversal
         """
         path = []
+        bin_weights = {}
+        # Initialise bin weights and target weight for heuristic
+        total_weight = sum(self.graph.items)
+        target_weight = total_weight / self.graph.num_bins
+
         # Starts at the Start node
         current_item = 'Start'
-        bin_weights = {}
-
         # Loop until current node equals end
         while current_item != 'End':
             
@@ -195,8 +231,22 @@ class Ant():
             else:
                 # Choose based on weighted pheromones
                 items, pheromones = zip(*next_items.items())
-                current_item = random.choices(items, weights=pheromones, k=1)[0]
+                # For Further Experimentation, uses a heuristic based on how close bins are to optimal weight
+                if LOCAL_HEURSTIC_EXPERIMENT:
+                    adjusted_weights = []
+                    for item, pheromone in next_items.items():
+                        bin_num, weight = item
+                        current_bin_weight = bin_weights.get(bin_num, 0)
+                        
+                        # Calculate heuristic factor: the closer to target_weight, the better
+                        heuristic_value = 1 / (1 + abs(current_bin_weight + weight - target_weight))
+                        
+                        # Adjusted weight combines pheromone and heuristic
+                        adjusted_weight = pheromone * (heuristic_value ** ALPHA)
+                        adjusted_weights.append(adjusted_weight)
+                        pheromones = adjusted_weights
 
+                current_item = random.choices(items, weights=pheromones, k=1)[0]
                 # Update bin weights based on the current item
                 bin_num, weight = current_item
                 bin_weights[bin_num] = bin_weights.get(bin_num, 0) + weight
@@ -210,7 +260,7 @@ class Ant():
 
         return fitness
     
-    def calculateFitness(self, bin_weights):
+    def calculateFitness(self, bin_weights: dict) -> int:
         """ Calculates the difference between the most and least full bin
 
         Args:
@@ -222,30 +272,14 @@ class Ant():
         lightest_bin = min(bin_weights.values())
         return (heaviest_bin - lightest_bin)
 
-    def updatePathPheromones(self):
+    def updatePathPheromones(self) -> None:
         """ Updates the pheromone for the whole of the path the ant took
         """
         pheromone_value = FITNESS_NUMERATOR / self.fitness
         for i in range(0, len(self.path)-1):
             self.graph.updatePheromone(self.path[i], self.path[i+1], pheromone_value)
     
-    def getFitness(self):
-        """ Returns the fitness of the ant
-
-        Returns:
-            int: Fitness value
-        """
-        return self.fitness
-    
-    def getPath(self):
-        """ Returns the path of the ant
-
-        Returns:
-            tuple[]: Path of the ant
-        """
-        return self.path
-    
-    def getBinWeights(self):
+    def getBinWeights(self) -> dict:
         """ Returns the bin weights of the path the ant took
 
         Returns:
@@ -253,13 +287,15 @@ class Ant():
         """
         return self.bin_weights
 
-""" Data visualisation functions
+""" 
+Data visualisation functions
 """
-def plotBestFitnessProgressionAllTrials(best_fitnesses, title):
+def plotBestFitnessProgressionAllTrials(best_fitnesses: List[List[int]], title: str) -> None:
     """ Line graph of how the best fitness evolves over each of the trials for an experiment.
 
     Args:
         best_fitnesses (int[][]): List of the best fitnesses for each trial.
+        title (str): The title of the line graph
     """
     # Number of tests that have occurred
     test_numbers = range(len(best_fitnesses[0]))
@@ -271,23 +307,17 @@ def plotBestFitnessProgressionAllTrials(best_fitnesses, title):
     for idx, trial_best_values in enumerate(best_fitnesses):
         plt.plot(test_numbers, trial_best_values, linestyle='-', label=f'Trial {idx + 1}')
 
-    # Add title and labels
+    # Title and labels
     plt.title(title)
     plt.xlabel('Test Number')
     plt.ylabel('Fitness')
-
-    # Format y-axis ticks with commas for thousands
-    plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x):,}'))
-
-    # Show legend
     plt.legend()
+    plt.grid()
+    plt.tight_layout()
 
-    # Display the plot
-    plt.grid()  # Optional: Add a grid for better readability
-    plt.tight_layout()  # Adjust layout to fit title/labels
     plt.show()
 
-def plotBestFitnessProgressionOneTrial(best_fitnesses):
+def plotBestFitnessProgressionOneTrial(best_fitnesses: List[int]) -> None:
     """ Line graph of how the best fitness evolves over a trial
 
     Args:
@@ -302,20 +332,16 @@ def plotBestFitnessProgressionOneTrial(best_fitnesses):
     # Plot the best fitness values for the single trial
     plt.plot(test_numbers, best_fitnesses, color=plt.cm.viridis(0.5), linestyle='-', label='Trial 1')
 
-    # Add title and labels
+    # Title and labels
     plt.title('Best Fitness Progression')
     plt.xlabel('Test Number')
     plt.ylabel('Fitness')
-
-    # Show legend
     plt.legend()
 
-    # Display the plot
     plt.show()
 
-def plotExperimentTrials(data):
-    """
-    Plots a grouped bar chart for multiple experiments, each with multiple trials.
+def plotExperimentTrials(data: List[List[int]]) -> None:
+    """ Plots a grouped bar chart for multiple experiments, each with multiple trials.
     
     Parameters:
     - data (int[][]): List of lists, where each inner list contains fitness values for each trial in an experiment.
@@ -332,7 +358,7 @@ def plotExperimentTrials(data):
     # X positions for each group
     x_positions = np.arange(num_experiments) * (num_trials * bar_width + space_between_experiments)
     
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _, ax = plt.subplots(figsize=(10, 6))
 
     # Plotting each trial within each experiment
     for i in range(num_trials):
@@ -340,67 +366,69 @@ def plotExperimentTrials(data):
         trial_data = [experiment[i] for experiment in data]  # Extract each trial's data across experiments
         ax.bar(trial_positions, trial_data, width=bar_width, label=f'Trial {i+1}')
     
-    # Customizing the plot
+    # Customisations
     ax.set_xticks(x_positions + (num_trials - 1) * bar_width / 2)
     ax.set_xticklabels(experiment_labels)
     ax.set_ylabel("Best Fitness")
     ax.set_title("Best Fitness Results for Each Experiment and Trial")
-    # ax.set_yscale('log')
     ax.legend(title="Trials")
+    
     plt.show()
 
-def plotWeightDistribution(weights):
-    """
-    Plot a bar graph for the distribution of weights.
+def plotWeightDistribution(weights: List[int]) -> None:
+    """ Plot a bar graph for the distribution of weights.
 
     Parameters:
     weights (int[]): An array of weights for each bin.
     """
     
-    # Create an array of indices for the x-axis
+    # Array of the indices of weights for the x-axis
     indices = list(range(len(weights)))
 
     # Create the bar graph
     plt.figure(figsize=(10, 6))
     plt.bar(indices, weights, color='skyblue', edgecolor='black')
 
-    # Adding labels and title
+    # Labels and the title
     plt.xlabel('Bin Number')
     plt.ylabel('Weight')
     plt.title('Weight Distribution of Bins')
     plt.xticks(indices)  # Set x-ticks to be the indices of weights
     plt.grid(axis='y')
 
-    # Show the plot
     plt.show()
 
-""" Functions for running the different aco experiments on the 1DBPP
+""" 
+Driver functions for running the aco experiments on the 1DBPP
 """
-def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
+def runExperiment(num_ants: int, evaporation_rate: float, bins: int, items: List[int], random_seed: int) -> Tuple[int, int, int]:
     """ Runs a set amount of evaluations of the ACO algorithm on the 1DBPP
 
     Args:
-        p (int): The number of paths to generate before updating the pheromone values
-        e (float): Evaporation rate of the pheromones
+        num_ants (int): The number of paths to generate before updating the pheromone values (p)
+        evaporation_rate (float): Evaporation rate of the pheromones (e)
         bins (int): The number of bins the items can be placed in
         items (int[]): The items to place in the bins
         random_seed (int): The seed value for when random is used in the experiment
+    Returns:
+        The best fitness, the progression of the best fitness and the best fitness recorded per p paths
     """
     # Sets the seed
+    random.seed(random_seed)
+
     no_of_evaluations = 0
     best_fitness_overall = float('inf')
 
-    random.seed(99)
     # Generate a graph
-    graph = PackingGraph(bins, items) 
+    graph = Graph(bins, items) 
     graph.initialiseGraph()
 
-    random.seed(random_seed)
-
+    # Ants to be used for traversal
     current_ants = [Ant(graph) for _ in range(num_ants)]
 
-    # Holds best and worst fitness for each p paths
+    # Holds the best fitnesses overall
     fitness_prog = []
+    # Holds best and worst fitnesses for each p paths
     best_fitness_per_p = []
 
     while no_of_evaluations < NUM_EVALUATIONS:
@@ -412,6 +440,7 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
             if current_fitness < best_fitness_overall:
                 best_fitness_overall = current_fitness
                 best_ant = ant
+            # Store the best fitness for the current p paths
             elif current_fitness < best_fitness_for_p:
                 best_fitness_for_p = current_fitness
             
@@ -431,7 +460,7 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     
     # Get the weights of all bins
     bin_weights = list(best_ant.getBinWeights().values())
-    # Calculate the average (mean) weight across all bins
+    # Calculate the mean weight
     average_weight = sum(bin_weights) / len(bin_weights)
     # Calculate the difference of each bin weight from the average weight
     differences = [abs(weight - average_weight) for weight in bin_weights]
@@ -452,16 +481,15 @@ def runExperiment(num_ants, evaporation_rate, bins, items, random_seed):
     print("Mean Absolute Deviation: ", abs(average_difference))
     print("Load balance ratio: ", f"{load_balance_ratio:.3g}")
 
-    return fitness_prog, best_fitness_overall, best_fitness_per_p
+    return best_fitness_overall, fitness_prog, best_fitness_per_p
 
-def getValuesForProblem(bin_problem):
+def getValuesForProblem(bin_problem: str) -> Tuple[int, List[int]]:
     """ Returns the correct bin and item values for a set problem
 
     Args:
         bin_problem (str): The type of bin problem to undertake
-
     Returns:
-        int, int[]: The number of bins and the items to be placed in the bins
+        (int, int[]): The number of bins and the items to be placed in the bins
     """
     items = []
     if bin_problem == "BPP1":
@@ -471,25 +499,26 @@ def getValuesForProblem(bin_problem):
         items = [i ** 2 / 2 for i in range(1, 501)]
         return 50, items
     else:
+        print("No values available for the problem")
         return 0, items
 
 if __name__ == "__main__":
     
     # Gets the bin num and items for the set problem
     bins, items = getValuesForProblem(PROBLEM_TO_SOLVE)   
+    # For plotting
     all_fitnesses = []
 
     # For each of the experiments
     for values in P_AND_E_VALUES:
         print("Experiment: ", values)
-        experiment_fitnesses = []
-        fitness_progressions = []
-        fitness_progressions_per_p = []
+        # For plotting
+        experiment_fitnesses, fitness_progressions, fitness_progressions_per_p = [], [], []
         # Runs a set amount of trials
         for i in range(0, NUM_TRIALS):
             print("Trial ", i+1)
             # i is used as the random seed for each trial
-            fitness_prog, best_fitness, best_fitness_per_p = runExperiment(values[0], values[1], bins, items, i)
+            best_fitness, fitness_prog, best_fitness_per_p = runExperiment(values[0], values[1], bins, items, i)
 
             fitness_progressions.append(fitness_prog)
             experiment_fitnesses.append(best_fitness)
@@ -501,5 +530,5 @@ if __name__ == "__main__":
         if PLOT_BEST_FITNESS_PROGRESSION: plotBestFitnessProgressionAllTrials(fitness_progressions, "Best Fitness Progression")
         # Plots the recorded best fitness for each p ant paths
         if PLOT_FITNESS_PROGRESSION_PER_P: plotBestFitnessProgressionAllTrials(fitness_progressions_per_p, "Best Fitness For p Ant Paths")
-    
+    # Plots all the best fitnesses on a bar chart
     if PLOT_EXPERIMENT_TRIALS: plotExperimentTrials(all_fitnesses)
