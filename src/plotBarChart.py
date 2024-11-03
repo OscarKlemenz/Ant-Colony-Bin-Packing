@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import numpy as np
 
 def plotExperimentTrials(data):
@@ -26,19 +27,20 @@ def plotExperimentTrials(data):
     for i in range(num_trials):
         trial_positions = x_positions + i * bar_width
         trial_data = [experiment[i] for experiment in data]  # Extract each trial's data across experiments
-        ax.bar(trial_positions, trial_data, width=bar_width, label=f'Trial {i+1}')
+        ax.bar(trial_positions, trial_data, width=bar_width, label=f'Trial {i+1}', zorder=3)
     
     # Customizing the plot
     ax.set_xticks(x_positions + (num_trials - 1) * bar_width / 2)
     ax.set_xticklabels(experiment_labels)
     ax.set_ylabel("Best Fitness")
     ax.set_title("Best Fitness Results for Each Experiment and Trial")
+    # Format the y-axis with commas for thousands using a lambda function
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x):,}'))
     #ax.set_yscale('log')
     ax.set_ylim(300000, 600000)  # Set y-axis limits here
     ax.legend(title="Trials")
+    ax.grid(which='both', linestyle='--', linewidth=0.7, zorder=1)
     plt.show()
-
-
 
 data = [[440679,483734.5,472905.0,442361.5,464977.0],
         [441116.0,436472.0,456628.0,479934.0,450805.0],

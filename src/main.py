@@ -1,7 +1,7 @@
-""" ECM3401 Coursework
+""" ECM341 Coursework
 
 This script implements an Ant Colony Optimization (ACO) algorithm for solving the Bin Packing Problem (BPP) 
-as part of the ECM3401 coursework. 
+as part of the ECM3412 coursework. 
 
 The script includes configuration options for experimentation with various parameters, 
 and generates visualisations of the algorithm across trials.
@@ -39,11 +39,21 @@ Graph Plotting - Flags to enable or disable various plots for visualising the re
 - PLOT_EXPERIMENT_TRIALS: Plot bar chart of best fitness for each trial
 - PLOT_WEIGHT_DIST: Plot bin weight distribution for a single trial
 
+Further Experimentation - Experimentation that goes beyond the spec
+
+- LOCAL_HEURSTIC_EXPERIMENT: Flag for using a local heuristic when deciding on the next
+                             node (Improves BPP2 significantly)
+- ALPHA: How much weight the heuristic has (0-1)
+- VARIABLE_E_VALUES: Some different e values, to see how they impact the ACO
+- VARIABLE_P_VALUES: Some different p values, to see how they impact the ACO
+
 """
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import numpy as np
 import random
 from typing import List, Tuple
+import sys
 """ 
 Global variables for ACO experimentation
 """
@@ -51,26 +61,25 @@ Global variables for ACO experimentation
 NUM_EVALUATIONS = 10000
 NUM_TRIALS = 5
 FITNESS_NUMERATOR = 100
-P_AND_E_VALUES = [(100, 0.9) , (100, 0.6), (10, 0.9), (10, 0.6)]
+P_AND_E_VALUES = [(100, 0.9), (100, 0.6), (10, 0.9), (10, 0.6)]
 
 # Problems
 BPP1 = 'BPP1'
 BPP2 = 'BPP2'
 
-PROBLEM_TO_SOLVE = BPP1
+PROBLEM_TO_SOLVE = BPP2
 
 # Graph plotting
 PLOT_BEST_FITNESS_PROGRESSION = False
-PLOT_FITNESS_PROGRESSION_PER_P = False
-PLOT_EXPERIMENT_TRIALS = False
+PLOT_FITNESS_PROGRESSION_PER_P = True
+PLOT_EXPERIMENT_TRIALS = True
 PLOT_WEIGHT_DIST = False
 
-# For Further Experimentation
+# Further Experimentation
 LOCAL_HEURSTIC_EXPERIMENT = False
 ALPHA = 0.1
 VARIABLE_E_VALUES = [(10, 0.85), (10, 0.8), (10,0.75), (10, 0.7)]
 VARIABLE_P_VALUES = [(5, 0.9), (20, 0.9), (50, 0.9), (75, 0.9)]
-
 """ 
 Class for the construction graph, used to represent all possible decisions ants can make, when traversing
 to each bin/item combination. Each directed edge also contains a pheremone value.
@@ -193,16 +202,21 @@ class Graph():
 Class declaration for an Ant, which will traverse across the generated graph based upon pheromones
 """
 class Ant():
-    def __init__(self, graph: Graph) -> None:
+    def __init__(self, graph: Graph, num_items: int) -> None:
         """ Initialisation
 
         Args:
             graph (Graph): The graph the ant is going to traverse
+            num_items (int): Number of items, indicates how long ant path will be, used for phereomone
+                             update
         """
         self.graph = graph
         self.fitness = -1
         self.path = []
         self.bin_weights = {}
+        self.path_len = num_items
+        # Initialise bin weights and target weight for heuristic (Further Work)
+        self.target_weight = sum(self.graph.items) / self.graph.num_bins
 
     def traverseGraph(self) -> int:
         """ Ant travels through the graph from Start to End, selecting the next node using the random library
@@ -212,9 +226,6 @@ class Ant():
         """
         path = []
         bin_weights = {}
-        # Initialise bin weights and target weight for heuristic
-        total_weight = sum(self.graph.items)
-        target_weight = total_weight / self.graph.num_bins
 
         # Starts at the Start node
         current_item = 'Start'
@@ -238,8 +249,8 @@ class Ant():
                         bin_num, weight = item
                         current_bin_weight = bin_weights.get(bin_num, 0)
                         
-                        # Calculate heuristic factor: the closer to target_weight, the better
-                        heuristic_value = 1 / (1 + abs(current_bin_weight + weight - target_weight))
+                        # The closer to target_weight, the weaker the pheromone should be
+                        heuristic_value = 1 / (1 + abs(current_bin_weight + weight - self.target_weight))
                         
                         # Adjusted weight combines pheromone and heuristic
                         adjusted_weight = pheromone * (heuristic_value ** ALPHA)
@@ -276,7 +287,7 @@ class Ant():
         """ Updates the pheromone for the whole of the path the ant took
         """
         pheromone_value = FITNESS_NUMERATOR / self.fitness
-        for i in range(0, len(self.path)-1):
+        for i in range(0, self.path_len):
             self.graph.updatePheromone(self.path[i], self.path[i+1], pheromone_value)
     
     def getBinWeights(self) -> dict:
@@ -309,12 +320,15 @@ def plotBestFitnessProgressionAllTrials(best_fitnesses: List[List[int]], title: 
 
     # Title and labels
     plt.title(title)
-    plt.xlabel('Test Number')
-    plt.ylabel('Fitness')
+    plt.xlabel('Evaluation Count (per p Paths)')
+    plt.ylabel('Best Fitness')
     plt.legend()
-    plt.grid()
-    plt.tight_layout()
 
+    # Format the y-axis with commas for thousands using a lambda function
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x):,}'))
+
+    plt.grid(linestyle='-')
+    plt.tight_layout()
     plt.show()
 
 def plotBestFitnessProgressionOneTrial(best_fitnesses: List[int]) -> None:
@@ -364,7 +378,7 @@ def plotExperimentTrials(data: List[List[int]]) -> None:
     for i in range(num_trials):
         trial_positions = x_positions + i * bar_width
         trial_data = [experiment[i] for experiment in data]  # Extract each trial's data across experiments
-        ax.bar(trial_positions, trial_data, width=bar_width, label=f'Trial {i+1}')
+        ax.bar(trial_positions, trial_data, width=bar_width, label=f'Trial {i+1}', zorder=3)
     
     # Customisations
     ax.set_xticks(x_positions + (num_trials - 1) * bar_width / 2)
@@ -372,7 +386,11 @@ def plotExperimentTrials(data: List[List[int]]) -> None:
     ax.set_ylabel("Best Fitness")
     ax.set_title("Best Fitness Results for Each Experiment and Trial")
     ax.legend(title="Trials")
-    
+
+    # Format the y-axis with commas for thousands using a lambda function
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x):,}'))
+
+    ax.grid(which='both', linestyle='-', linewidth=0.7, zorder=1)
     plt.show()
 
 def plotWeightDistribution(weights: List[int]) -> None:
@@ -424,7 +442,7 @@ def runExperiment(num_ants: int, evaporation_rate: float, bins: int, items: List
     graph.initialiseGraph()
 
     # Ants to be used for traversal
-    current_ants = [Ant(graph) for _ in range(num_ants)]
+    current_ants = [Ant(graph, len(items)) for _ in range(num_ants)]
 
     # Holds the best fitnesses overall
     fitness_prog = []
@@ -457,11 +475,15 @@ def runExperiment(num_ants: int, evaporation_rate: float, bins: int, items: List
         # Evaporate the pheromones after all updates
         graph.evaporatePheromones(evaporation_rate)
 
+        # Output progress in place
+        sys.stdout.write(f"\rTotal evaluations so far: {no_of_evaluations}/{NUM_EVALUATIONS}")
+        sys.stdout.flush() 
+
     
     # Get the weights of all bins
     bin_weights = list(best_ant.getBinWeights().values())
     # Calculate the mean weight
-    average_weight = sum(bin_weights) / len(bin_weights)
+    average_weight = sum(bin_weights) / bins
     # Calculate the difference of each bin weight from the average weight
     differences = [abs(weight - average_weight) for weight in bin_weights]
     # Compute the average difference
@@ -477,7 +499,7 @@ def runExperiment(num_ants: int, evaporation_rate: float, bins: int, items: List
     if PLOT_WEIGHT_DIST: plotWeightDistribution(bin_weights)
 
     # Outputs
-    print("Best fitness: ", best_fitness_overall)
+    print("\nBest fitness: ", best_fitness_overall)
     print("Mean Absolute Deviation: ", abs(average_difference))
     print("Load balance ratio: ", f"{load_balance_ratio:.3g}")
 
@@ -529,6 +551,6 @@ if __name__ == "__main__":
         # Plots the improvements to the best fitness
         if PLOT_BEST_FITNESS_PROGRESSION: plotBestFitnessProgressionAllTrials(fitness_progressions, "Best Fitness Progression")
         # Plots the recorded best fitness for each p ant paths
-        if PLOT_FITNESS_PROGRESSION_PER_P: plotBestFitnessProgressionAllTrials(fitness_progressions_per_p, "Best Fitness For p Ant Paths")
+        if PLOT_FITNESS_PROGRESSION_PER_P: plotBestFitnessProgressionAllTrials(fitness_progressions_per_p, "Best Fitness Recorded Across Evaluations")
     # Plots all the best fitnesses on a bar chart
     if PLOT_EXPERIMENT_TRIALS: plotExperimentTrials(all_fitnesses)
